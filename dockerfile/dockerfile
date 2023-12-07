@@ -1,0 +1,13 @@
+FROM ubuntu:22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y python3 git python3-pip
+
+RUN git clone https://github.com/toribasho/vacancy-searcher-3000.git
+
+RUN pip install --no-cache-dir -r /vacancy-searcher-3000/requirements.txt
+
+WORKDIR /vacancy-searcher-3000
+
+CMD ["python3", "vacancy_searcher_3000.py"]
