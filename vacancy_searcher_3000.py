@@ -47,10 +47,10 @@ import time
 import pandas as pd
 
 
-print('VACANCIES_TO_LOOK:' + vacancies_to_look_in_name)
-print('COUNTRIES:' + countries_and_schedule)
-print('REMOTE:' + remote_words)
-print('EXCLUDE_WORDS:' + remote_words)
+print('VACANCIES_TO_LOOK:', vacancies_to_look_in_name)
+print('COUNTRIES:', countries_and_schedule)
+print('REMOTE:', remote_words)
+print('EXCLUDE_WORDS:', remote_words)
 
 quit()
 
