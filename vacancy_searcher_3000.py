@@ -47,30 +47,37 @@ import requests
 import json
 import time
 import pandas as pd
+import psycopg2
 
+
+all_v=[]
+conn = psycopg2.connect("host=postgres_container dbname=public user=tori password=112233" )
+cur = conn.cursor()
+cur.execute("SELECT url FROM vacancies")
+for row in cur.fetchall():
+    all_v.append(row["url"])
+cur.close()
 
 print('VACANCIES_TO_LOOK:', vacancies_to_look_in_name)
 print('COUNTRIES:', countries_and_schedule)
 print('REMOTE:', remote_words)
 print('EXCLUDE_WORDS:', exclude_words_IN_NAME)
+print('PROCESSED URLs COUNT:', len(all_v))
 
 quit()
 
 vacancies_to_look_in_name = ['NAME:'+x for x in vacancies_to_look_in_name]
 n_vacancies = len(vacancies_to_look_in_name)
-all_countries = sum(list(list(countries_and_schedule.values())+[countries_and_schedule['remote']]), [])
+vacancies_request = ' OR '.join(vacancies_to_look_in_name) # TODO: ADD EXCLUDE WORDS IN QUERRY
 n_countries = len(countries)
-countries_iteration = sum([[x]*n_vacancies for x in all_countries],[])
 n_remote = len(countries_and_schedule['remote'])
-all_schedules = ['remote']*n_remote*n_vacancies+[None]*\
-                (n_countries-n_remote)*n_vacancies
 remote_words_there = 0
 
 
 def getPage(countr = 113, page = 0):
 
     all_params = {
-        'text': ' OR '.join(vacancies_to_look_in_name), # Текст поиска
+        'text': vacancies_request, # Текст поиска
         'schedule': 'remote',
         'period': days_to_look, # 1 - за сутки; 3 - за 3 дня, 7 - за неделю
         'area': '40', # one area id for each querry
@@ -78,35 +85,15 @@ def getPage(countr = 113, page = 0):
         'per_page': 100 # Кол-во вакансий на 1 странице
     }
 
-    # params = {x:all_params[x][vacancy_type] for x in all_params.keys()}
-    params = all_params
-
-    req = requests.get('https://api.hh.ru/vacancies', params) # Посылаем запрос к API
+    req = requests.get('https://api.hh.ru/vacancies', all_params) # Посылаем запрос к API
     data = req.content.decode() # Декодируем его ответ, чтобы Кириллица отображалась корректно
     req.close()
     return data
 
-all_v=[]
-try:
-    all_vc = pd.read_csv('all_vacancies.csv')
-except:
-    pass
-
-new_df = pd.DataFrame(columns=['name','exp','url','descr','sch','loc'])
-try:
-    for dir in ['docs/vacancies', 'docs/pagination']:
-        for f in os.listdir(dir):
-            os.remove(os.path.join(dir, f))
-except:
-    pass
 # чтобы видеть целиком описание вакансии
 pd.set_option('display.max_colwidth', 10000)
 
-# def pretty_print(df):
-#     return display( HTML( df.style.set_properties(**{'text-align': 'left'}).to_html().replace("\\n  <strong>","<br> <strong>").replace("<strong>","<br> <strong>").replace("\\n","<br> ⏺") ) )
-
-
-
+step = 0
 # проходимся по всем типам вакансий
 for country in range(n_countries):
     # проходимся по всем страницам поиска
@@ -119,7 +106,7 @@ for country in range(n_countries):
             break
 
         for v in jsObj['items']:
-            if (v['url'] not in list(all_vc['vacancy_url'])) and (v['url'] not in all_v): # fix
+            if (v['url'] not in list(all_vc['vacancy_url'])) and (v['url'] not in all_v): 
             
                 # Обращаемся к API и получаем детальную информацию по конкретной вакансии
                 all_v.append(v['url'])
@@ -127,12 +114,29 @@ for country in range(n_countries):
                 data = req.content.decode()
                 req.close()
                 
-                # Создаем файл в формате json с идентификатором вакансии в качестве названия
-                # Записываем в него ответ запроса и закрываем файл
-                fileName = './docs/vacancies/{}.json'.format(v['id'])
-                f = open(fileName, mode='w', encoding='utf8')
-                f.write(data)
-                f.close()
+                jsonObj = json.loads(data)
+
+                remote_words_there=1 if any(word in jsonObj['description'].lower() for word in remote_words) else 0
+
+                stri = jsonObj['description']
+                # stri = stri.replace('<strong>','\033[1m')
+                # stri = stri.replace('</strong>','\033[0m')
+                stri = stri.replace('</li> <li>','\\n')
+                stri = stri.replace('<ul> <li>','\\n')
+                stri = stri.replace('</li>','\\n')
+                stri = stri.replace('</ul>','')
+
+                cur = conn.cursor()
+                cur.execute("""INSERT INTO vacancies (url,name,experience,alternate_url,schedule,location,added,description) 
+                            VALUES (%s, %s, %s, %s, %s, current_timestamp, %s); 
+                            """, 
+                            (jsonObj['name'], 
+                            jsonObj['experience']['id']),
+                            jsonObj['alternate_url'],                             
+                            jsonObj['schedule']['id'],
+                            jsonObj['area']['name'],
+                            stri)
+                cur.close()
                 
                 time.sleep(0.25)
             else:
@@ -142,77 +146,15 @@ for country in range(n_countries):
         # Необязательная задержка, но чтобы не нагружать сервисы hh, оставим
         time.sleep(0.25)
 
-    # проходимся по всем вакансиям
-    for fl in os.listdir('./docs/pagination'):
-        
-        # Открываем файл, читаем его содержимое, закрываем файл
-        f = open('./docs/pagination/{}'.format(fl), encoding='utf8')
-        jsonText = f.read()
-        f.close()
-        
-        # Преобразуем полученный текст в объект справочника
-        jsonObj = json.loads(jsonText)
-        
-        # Получаем и проходимся по непосредственно списку вакансий
-        for v in jsonObj['items']:
-            if (v['url'] not in list(all_vc['vacancy_url'])) and (v['url'] not in all_v):
-            
-                # Обращаемся к API и получаем детальную информацию по конкретной вакансии
-                all_v.append(v['url'])
-                req = requests.get(v['url'])
-                data = req.content.decode()
-                req.close()
-                
-                # Создаем файл в формате json с идентификатором вакансии в качестве названия
-                # Записываем в него ответ запроса и закрываем файл
-                fileName = './docs/vacancies/{}.json'.format(v['id'])
-                f = open(fileName, mode='w', encoding='utf8')
-                f.write(data)
-                f.close()
-                
-                time.sleep(0.25)
-            else:
-                pass
-
-    # добавляем в датафрейм
-    list_files = os.listdir('./docs/vacancies')
-    for vacancy in list_files:
-        f = open('./docs/vacancies/{}'.format(vacancy), encoding='utf8')
-        jsonText = f.read()
-        f.close()
-        jsonObj = json.loads(jsonText)
-
-        if i >= n_vacancies*n_countries:
-            remote_words_there=1 if any(word in jsonObj['description'].lower() for word in remote_words) else 0
-
-        if remote_words_there or (i < n_vacancies*(n_countries-n_remote)):
-            if not any(word in jsonObj['name'].lower() for word in exclude_words_IN_NAME):
-                stri = jsonObj['description']
-                # stri = stri.replace('<strong>','\033[1m')
-                # stri = stri.replace('</strong>','\033[0m')
-                stri = stri.replace('</li> <li>','\\n')
-                stri = stri.replace('<ul> <li>','\\n')
-                stri = stri.replace('</li>','\\n')
-                stri = stri.replace('</ul>','')
-
-                new_df.loc[len(new_df)] = [jsonObj['name'], 
-                                    jsonObj['experience']['id'],
-                                    jsonObj['alternate_url'], 
-                                    stri,
-                                    jsonObj['schedule']['id'],
-                                    jsonObj['area']['name']]
-
-    # удаляем файлы
-    for dir in ['docs/vacancies', 'docs/pagination']:
-        for f in os.listdir(dir):
-            os.remove(os.path.join(dir, f))
-
     # отслеживаем работу
-    if (i%print_every_N_steps==0)&(len(str(n_vacancies*n_countries - i))>1):
+    if (step%print_every_N_steps==0)):
         if n_vacancies*n_countries - i >= 100:
             print('осталось '+str(n_vacancies*n_countries - i)+' типов', end='')
         else:
             print('осталось '+str(n_vacancies*n_countries - i)+' типов вакансий', end='')
         print('\r', end='')
+    step+=1
 
 print('\n\n Всего '+str(len(new_df))+' новых вакансий')
+
+conn.close()
