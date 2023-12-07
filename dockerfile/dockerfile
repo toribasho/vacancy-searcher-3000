@@ -2,7 +2,9 @@ FROM alpine:latest
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apk add --update --no-cache python3 git && ln -sf python3 /usr/bin/python
+RUN apk add --update --no-cache python3 git curl gcc g++ gfortran build-base wget freetype-dev libpng-dev openblas-dev \
+    && ln -sf python3 /usr/bin/python \
+    && ln -sf /usr/include/locale.h /usr/include/xlocale.h
 
 RUN python3 -m ensurepip
 
