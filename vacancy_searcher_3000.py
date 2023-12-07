@@ -52,10 +52,16 @@ import psycopg2
 
 all_v=[]
 conn = psycopg2.connect("host=postgres_container dbname=public user=tori password=112233" )
-cur = conn.cursor()
-cur.execute("SELECT url FROM vacancies")
-for row in cur.fetchall():
-    all_v.append(row["url"])
+with conn.cursor() as cursor:
+    cursor.execute("SELECT url FROM vacancies")
+    for row in cursor.fetchall():
+        all_v.append(row["url"])
+
+# with conn.cursor() as cursor:
+#     cursor.execute("SELECT url FROM vacancies")
+#     for row in cursor.fetchall():
+#         all_v.append(row["url"])
+
 cur.close()
 
 print('VACANCIES_TO_LOOK:', vacancies_to_look_in_name)
@@ -74,13 +80,13 @@ n_remote = len(countries_and_schedule['remote'])
 remote_words_there = 0
 
 
-def getPage(countr = 113, page = 0):
+def getPage(country = 113, page = 0):
 
     all_params = {
         'text': vacancies_request, # Текст поиска
         'schedule': 'remote',
         'period': days_to_look, # 1 - за сутки; 3 - за 3 дня, 7 - за неделю
-        'area': '40', # one area id for each querry
+        'area': country, # one area id for each querry
         'page': page, # Индекс страницы поиска на HH
         'per_page': 100 # Кол-во вакансий на 1 странице
     }
@@ -126,8 +132,8 @@ for country in range(n_countries):
                 stri = stri.replace('</li>','\\n')
                 stri = stri.replace('</ul>','')
 
-                cur = conn.cursor()
-                cur.execute("""INSERT INTO vacancies (url,name,experience,alternate_url,schedule,location,added,description) 
+                with conn.cursor() as cursor:
+                    cursor.execute("""INSERT INTO vacancies (url,name,experience,alternate_url,schedule,location,added,description) 
                             VALUES (%s, %s, %s, %s, %s, current_timestamp, %s); 
                             """, 
                             (jsonObj['name'], 
@@ -136,7 +142,7 @@ for country in range(n_countries):
                             jsonObj['schedule']['id'],
                             jsonObj['area']['name'],
                             stri)
-                cur.close()
+                
                 
                 time.sleep(0.25)
             else:
