@@ -5,7 +5,7 @@ import os
 #                             'Data Science','ML','LLM',
 #                             'Machine Learning','прогнозирование','анализ']
 
-vacancies_to_look_in_name = os.getenv('VACANCIES_TO_LOOK').split(',')
+vacancies_to_look_in_name = str(os.getenv('VACANCIES_TO_LOOK')).split(',')
 
 
 
@@ -13,7 +13,7 @@ vacancies_to_look_in_name = os.getenv('VACANCIES_TO_LOOK').split(',')
 # countries_and_schedule = {'remote':[113, 5, 16], 'not_given':[40, 97, 9, 48, 1001, 28]}
 # 'area': 113 Россия; 'area': 40 Казахстан; 5 и 16 - Украина и Беларусь; остальное - разные другие страны
 
-countries_and_schedule = os.getenv('COUNTRIES').split(',')
+countries_and_schedule = str(os.getenv('COUNTRIES')).split(',')
 
 
 # те страны которые только для удаленки - берем во-первых вакансии где указан удаленный режим, 
@@ -21,7 +21,7 @@ countries_and_schedule = os.getenv('COUNTRIES').split(',')
 # remote_words = ['удалён','удален','за пределами рф','дистанцион','из дома','remote',
 #                 'relocation','релокаци','из другой страны','из любой точки мира','online']
 
-remote_words = os.getenv('REMOTE').split(',')
+remote_words = str(os.getenv('REMOTE')).split(',')
 
 # если эти слова есть в названии вакансии, то эти вакансии автоматически исключаем из просмотра, чтобы не тратить время
 # exclude_words_IN_NAME = ['1c', '1с', 'системн', 'финансов', 'senior', 'lead', 'старший', 'ведущий',
@@ -31,7 +31,7 @@ remote_words = os.getenv('REMOTE').split(',')
 #                          'линии поддержки', 'ozon', 'wildberries', 'маркетплейс', 'system', 'писатель',
 #                          'безопасность','куратор','golang','оператор','financial','информационной безопасности']
 
-remote_words = os.getenv('EXCLUDE_WORDS').split(',')
+remote_words = str(os.getenv('EXCLUDE_WORDS')).split(',')
 
 # число календарных дней за которое подтягиваем историю загрузки вакансий, брала с запасом, чтобы ничего не упустить, 
 # но большинство вакансий повторяются, так что на увеличении времени это не сильно сказывается (начиная со второго прогона кода)
