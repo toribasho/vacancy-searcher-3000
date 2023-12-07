@@ -10,7 +10,7 @@ RUN pip3 install --no-cache --upgrade pip setuptools
 
 RUN git clone https://github.com/toribasho/vacancy-searcher-3000.git
 
-RUN pip install --no-cache-dir -r /vacancy-searcher-3000/requirements.txt
+RUN pip3 install --no-cache-dir -r /vacancy-searcher-3000/requirements.txt
 
 WORKDIR /vacancy-searcher-3000
 
