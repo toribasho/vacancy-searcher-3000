@@ -47,6 +47,13 @@ import time
 import pandas as pd
 
 
+print('VACANCIES_TO_LOOK:' + vacancies_to_look_in_name)
+print('COUNTRIES:' + countries_and_schedule)
+print('REMOTE:' + remote_words)
+print('EXCLUDE_WORDS:' + remote_words)
+
+quit()
+
 vacancies_to_look_in_name = ['NAME:'+x for x in vacancies_to_look_in_name]
 n_vacancies = len(vacancies_to_look_in_name)
 all_countries = sum(list(list(countries_and_schedule.values())+[countries_and_schedule['remote']]), [])
@@ -91,8 +98,8 @@ except:
 # чтобы видеть целиком описание вакансии
 pd.set_option('display.max_colwidth', 10000)
 
-def pretty_print(df):
-    return display( HTML( df.style.set_properties(**{'text-align': 'left'}).to_html().replace("\\n  <strong>","<br> <strong>").replace("<strong>","<br> <strong>").replace("\\n","<br> ⏺") ) )
+# def pretty_print(df):
+#     return display( HTML( df.style.set_properties(**{'text-align': 'left'}).to_html().replace("\\n  <strong>","<br> <strong>").replace("<strong>","<br> <strong>").replace("\\n","<br> ⏺") ) )
 
 
 
