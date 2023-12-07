@@ -13,8 +13,10 @@ vacancies_to_look_in_name = str(os.getenv('VACANCIES_TO_LOOK')).split(',')
 # countries_and_schedule = {'remote':[113, 5, 16], 'not_given':[40, 97, 9, 48, 1001, 28]}
 # 'area': 113 Россия; 'area': 40 Казахстан; 5 и 16 - Украина и Беларусь; остальное - разные другие страны
 
-countries_and_schedule = str(os.getenv('COUNTRIES')).split(',')
+countries = str(os.getenv('COUNTRIES')).split(',')
+schedule = str(os.getenv('SCHEDULE')).split(',')
 
+countries_and_schedule = {'remote':countries, 'not_given':schedule}
 
 # те страны которые только для удаленки - берем во-первых вакансии где указан удаленный режим, 
 # во-вторых смотрим ВСЕ режимы, и отбираем вакансии где в описании есть следующие слова:
