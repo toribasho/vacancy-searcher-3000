@@ -41,6 +41,18 @@ days_to_look = 1
 # то у меня выходило 108 запросов, и при прохождении каждых 10 код выдает print, чтобы понимать сколько осталось
 print_every_N_steps = 10
 
+user_id = os.getenv('USER_ID')
+user_querry = os.getenv('QUERRY_ID')
+
+if ( user_id is None ):
+    print('No user_id is provided! Aborting...')
+    quit()
+
+if ( user_querry is not None):
+    get_querry = 'SELECT * FROM querries where usr_id = %s and querry_id = %s'
+else:
+    get_querry = 'SELECT * FROM querries where usr_id = %s order by id desc limit 1'
+
 import requests
 import json
 import time
@@ -56,7 +68,7 @@ with conn.cursor() as cursor:
         all_v.append(row["url"])
 
 with conn.cursor() as cursor:
-    cursor.execute("SELECT * FROM querries where usr_id = 1")
+    cursor.execute( get_querry,(user_id,user_querry) )
     for row in cursor.fetchone():
         vacancies_to_look_in_name=row['vacancies_to_look']
         countries=row['countries']
