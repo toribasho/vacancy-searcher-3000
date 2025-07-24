@@ -44,7 +44,7 @@ print_every_N_steps = 10
 user_id = os.getenv('USER_ID')
 user_querry = os.getenv('QUERRY_ID')
 
-if ( user_id is None ):
+if ( user_id is None ):  ## external params
     print('No user_id is provided! Aborting...')
     quit()
 
@@ -117,7 +117,7 @@ new_vacancy_count=0
 # проходимся по всем типам вакансий
 for country in range(n_countries):
     # проходимся по всем страницам поиска
-    for page in range(0, 100):
+    for page in range(0, 10):
         # Преобразуем текст ответа запроса в справочник Python
         jsObj = json.loads(getPage(country, page))
         
