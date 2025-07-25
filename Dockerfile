@@ -1,30 +1,28 @@
-# --- Stage 1: Build dependencies ---
-FROM python:3.11-alpine AS builder
+# Use a Python image that's less likely to have C library issues
+# 'slim' images are often better than 'alpine' for C extensions
+FROM python:3.11-slim
 
-# Install build dependencies
-# We need python3-dev and build-base to compile C extensions
-RUN apk add --no-cache postgresql-dev python3-dev build-base
+# Install libpq, the PostgreSQL client library
+# Note: On Debian-based images ('-slim' is Debian), this is 'libpq-dev'
+#       But since we're using the binary wheel, we only need the runtime library.
+#       Let's install both to be safe, but libpq5 is the runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
-COPY requirements.txt .
 
-# Install dependencies, which will trigger the compilation of psycopg2
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements file and install dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-
-# --- Stage 2: Final runtime image ---
-FROM python:3.11-alpine AS final
-
-# Only install runtime dependencies
-RUN apk add --no-cache libpq
-
-WORKDIR /app
-# Copy installed packages from the builder stage
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+# Copy application code
 COPY . /app
 
-# Create a non-root user (optional but recommended)
-RUN addgroup -S appuser && adduser -S appuser -G appuser
+# Create a non-root user for security (optional but recommended)
+RUN adduser --system --no-create-home appuser
 USER appuser
 
 # Run the script
