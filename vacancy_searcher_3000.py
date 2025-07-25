@@ -181,8 +181,8 @@ def getVacnciesByType( l_countries, schedule = 'remote' ):
                         
     print('\n\n Всего '+str(new_vacancy_count)+' новых вакансий по запросу ' + schedule)
 
-getVacnciesByType(countries,'remote')
+getVacnciesByType(countries,'fullDay')
 
-getVacnciesByType(schedule,'fullDay')
+getVacnciesByType(schedule,'remote')
 
 conn.close()
