@@ -127,47 +127,47 @@ def getVacnciesByType( l_countries, schedule = 'remote' ):
                     # remote_words_there=1 #if any(word in jsonObj['description'].lower() for word in remote_words) else 0
 
                     # if remote_words_there:
-                    #     if not any(word in jsonObj['name'].lower() for word in exclude_words_IN_NAME):
+                    if not any(word in jsonObj['name'].lower() for word in exclude_words_IN_NAME):
 
-                    stri = jsonObj['description']
-                    # stri = stri.replace('<strong>','\033[1m')
-                    # stri = stri.replace('</strong>','\033[0m')
-                    stri = stri.replace('</li> <li>','\\n')
-                    stri = stri.replace('<ul> <li>','\\n')
-                    stri = stri.replace('</li>','\\n')
-                    stri = stri.replace('</ul>','')
+                        stri = jsonObj['description']
+                        # stri = stri.replace('<strong>','\033[1m')
+                        # stri = stri.replace('</strong>','\033[0m')
+                        stri = stri.replace('</li> <li>','\\n')
+                        stri = stri.replace('<ul> <li>','\\n')
+                        stri = stri.replace('</li>','\\n')
+                        stri = stri.replace('</ul>','')
 
 
-                    # (user_id,query_id,url,name,experience,alternate_url,description,schedule,location)
-                    # print('Vac name: ', jsonObj['name'])
-                    # print('Exp: ', jsonObj['experience']['id'])
-                    # print('url: ', jsonObj['alternate_url'])
-                    # print('Desc: ', stri)     
-                    # print('Sched: ', jsonObj['schedule']['id'])
-                    # print('Location: ', jsonObj['area']['name'])
+                        # (user_id,query_id,url,name,experience,alternate_url,description,schedule,location)
+                        # print('Vac name: ', jsonObj['name'])
+                        # print('Exp: ', jsonObj['experience']['id'])
+                        # print('url: ', jsonObj['alternate_url'])
+                        # print('Desc: ', stri)     
+                        # print('Sched: ', jsonObj['schedule']['id'])
+                        # print('Location: ', jsonObj['area']['name'])
 
-                    vacancy_data = (
-                        user_id,
-                        user_query,
-                        v['url'],
-                        jsonObj['name'], 
-                        jsonObj['experience']['id'],
-                        jsonObj['alternate_url'],   
-                        stri,                          
-                        jsonObj['schedule']['id'],
-                        jsonObj['area']['name']
-                    )
+                        vacancy_data = (
+                            user_id,
+                            user_query,
+                            v['url'],
+                            jsonObj['name'], 
+                            jsonObj['experience']['id'],
+                            jsonObj['alternate_url'],   
+                            stri,                          
+                            jsonObj['schedule']['id'],
+                            jsonObj['area']['name']
+                        )
 
-                    # print('Ready insert data: ', vacancy_data)
+                        # print('Ready insert data: ', vacancy_data)
 
-                    with conn.cursor() as cursor:
-                        cursor.execute(insert_query, vacancy_data)
+                        with conn.cursor() as cursor:
+                            cursor.execute(insert_query, vacancy_data)
+                            time.sleep(0.25)
+                            conn.commit()
+                            cursor.close()
+                            
+                        new_vacancy_count += 1
                         time.sleep(0.25)
-                        conn.commit()
-                        cursor.close()
-                        
-                    new_vacancy_count += 1
-                    time.sleep(0.25)
                     
                 else:
                     pass
