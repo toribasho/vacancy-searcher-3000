@@ -1,176 +1,188 @@
 import os
 
-# ищем только вакансии где есть такие слова (поиск от hh, оэтому похожие слова тоже попадают)
-# vacancies_to_look_in_name = ['Аналитик','Analyst','Data Scientist',
-#                             'Data Science','ML','LLM',
-#                             'Machine Learning','прогнозирование','анализ']
-
-# vacancies_to_look_in_name = str(os.getenv('VACANCIES_TO_LOOK')).split(',')
-
-# указываем в каких странах мы заинтересованы только для удаленки, и в каких - согласны на любой формат
-# countries_and_schedule = {'remote':[113, 5, 16], 'not_given':[40, 97, 9, 48, 1001, 28]}
-# 'area': 113 Россия; 'area': 40 Казахстан; 5 и 16 - Украина и Беларусь; остальное - разные другие страны
-
-# countries = str(os.getenv('COUNTRIES')).split(',')
-# schedule = str(os.getenv('SCHEDULE')).split(',')
-
-# countries_and_schedule = {'remote':countries, 'not_given':schedule}
-
-# те страны которые только для удаленки - берем во-первых вакансии где указан удаленный режим, 
-# во-вторых смотрим ВСЕ режимы, и отбираем вакансии где в описании есть следующие слова:
-# remote_words = ['удалён','удален','за пределами рф','дистанцион','из дома','remote',
-#                 'relocation','релокаци','из другой страны','из любой точки мира','online']
-
-# remote_words = str(os.getenv('REMOTE')).split(',')
-
-# если эти слова есть в названии вакансии, то эти вакансии автоматически исключаем из просмотра, чтобы не тратить время
-# exclude_words_IN_NAME = ['1c', '1с', 'системн', 'финансов', 'senior', 'lead', 'старший', 'ведущий',
-#                          'эксперт', 'автор', 'developer', 'лаборант', 'руководитель', 'менеджер',
-#                          'бизнес', 'экономист', 'химик', 'начальник', 'главный', 'медсестра',
-#                          'спикер', 'архитектор', 'бухгалтер', 'директор', 'business', 'научный', 
-#                          'линии поддержки', 'ozon', 'wildberries', 'маркетплейс', 'system', 'писатель',
-#                          'безопасность','куратор','golang','оператор','financial','информационной безопасности']
-
-# exclude_words_IN_NAME = str(os.getenv('EXCLUDE_WORDS')).split(',')
-
 # число календарных дней за которое подтягиваем историю загрузки вакансий, брала с запасом, чтобы ничего не упустить, 
 # но большинство вакансий повторяются, так что на увеличении времени это не сильно сказывается (начиная со второго прогона кода)
-days_to_look = 1
-
-# т.к. я искала 9 вакансий по 9 разным странам, плюс страны для удаленки прогоняются дважды, 
-# то у меня выходило 108 запросов, и при прохождении каждых 10 код выдает print, чтобы понимать сколько осталось
-print_every_N_steps = 10
+days_to_look = 2
 
 user_id = os.getenv('USER_ID')
-user_querry = os.getenv('QUERRY_ID')
+user_query = os.getenv('QUERY_ID')
 
 if ( user_id is None ):  ## external params
     print('No user_id is provided! Aborting...')
     quit()
 
-if ( user_querry is not None):
-    get_querry = 'SELECT * FROM querries where usr_id = %s and querry_id = %s'
-else:
-    get_querry = 'SELECT * FROM querries where usr_id = %s order by id desc limit 1'
+if ( user_query is None ):  ## external params
+    print('No user_query is provided! Aborting...')
+    quit()
+
+select_query = """
+    SELECT url FROM vacancies where usr_id = %s
+    """
+
+get_query = """
+    SELECT * FROM querries where usr_id = %s and id = %s
+    """
+
+insert_query = """
+    INSERT INTO vacancies (usr_id, query_id, url, name, experience, alternate_url, description, schedule, location)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """                                    
 
 import requests
 import json
 import time
-import pandas as pd
+# import pandas as pd
 import psycopg2
 
-conn = psycopg2.connect("host=postgres_container dbname=postgres user=tori password=112233" )
+try:
+    # Establish a connection
+    conn = psycopg2.connect(
+        dbname="postgres",
+        user="tori",
+        password="112233",
+        host="192.168.1.160",
+        port="5432"
+    )
+    print("Connection successful!")
+
+except psycopg2.Error as e:
+    print(f"Error connecting to PostgreSQL: {e}")
+
 all_v=[]
 
 with conn.cursor() as cursor:
-    cursor.execute("SELECT url FROM vacancies")
+    cursor.execute(select_query,(user_id))
     for row in cursor.fetchall():
-        all_v.append(row["url"])
+        all_v.append(row[0])
+    cursor.close()
+
+# quit()
 
 with conn.cursor() as cursor:
-    cursor.execute( get_querry,(user_id,user_querry) )
-    for row in cursor.fetchone():
-        vacancies_to_look_in_name=row['vacancies_to_look']
-        countries=row['countries']
-        schedule=row['schedule']
-        countries_and_schedule = {'remote':countries, 'not_given':schedule}
-        remote_words=row['remote']
-        exclude_words_IN_NAME=row['exclude_words']
+    cursor.execute( get_query,(user_id,user_query) )
+    # cursor.execute( get_query,(user_id) )
+    for row in cursor.fetchall():
+        # print(row)
+        vacancies_to_look_in_name=row[2].strip("'").split(',')
+        countries=row[3].strip("'").split(',')
+        schedule=row[4].strip("'").split(',')
+        countries_and_schedule = {'remote':countries, 'all':schedule}
+        remote_words=row[5].strip("'").split(',')
+        exclude_words_IN_NAME=row[6].strip("'").split(',')
+    cursor.close()
 
 print('VACANCIES_TO_LOOK:', vacancies_to_look_in_name)
-print('COUNTRIES:', countries_and_schedule)
+# print('COUNTRIES ON SITE:', countries)
+# print('COUNTRIES REMOTE:', schedule)
+print('COUNTRIES & SCHED:', countries_and_schedule)
 print('REMOTE:', remote_words)
 print('EXCLUDE_WORDS:', exclude_words_IN_NAME)
 print('PROCESSED URLs COUNT:', len(all_v))
 
-# quit()
-
 vacancies_to_look_in_name = ['NAME:'+x for x in vacancies_to_look_in_name]
 n_vacancies = len(vacancies_to_look_in_name)
 vacancies_request = ' OR '.join(vacancies_to_look_in_name) # TODO: ADD EXCLUDE WORDS IN QUERRY
-n_countries = len(countries)
-n_remote = len(countries_and_schedule['remote'])
 remote_words_there = 0
 
 
-def getPage(country = 113, page = 0):
+def getPage(schedule = 'remote', country = 113, page = 0):
 
     all_params = {
         'text': vacancies_request, # Текст поиска
-        'schedule': 'remote',
+        'schedule': schedule,
         'period': days_to_look, # 1 - за сутки; 3 - за 3 дня, 7 - за неделю
         'area': country, # one area id for each querry
         'page': page, # Индекс страницы поиска на HH
         'per_page': 100 # Кол-во вакансий на 1 странице
     }
-
     req = requests.get('https://api.hh.ru/vacancies', all_params) # Посылаем запрос к API
     data = req.content.decode() # Декодируем его ответ, чтобы Кириллица отображалась корректно
     req.close()
     return data
 
-# чтобы видеть целиком описание вакансии
-pd.set_option('display.max_colwidth', 10000)
-
-step = 0
-new_vacancy_count=0
-# проходимся по всем типам вакансий
-for country in range(n_countries):
-    # проходимся по всем страницам поиска
-    for page in range(0, 10):
-        # Преобразуем текст ответа запроса в справочник Python
-        jsObj = json.loads(getPage(country, page))
-        
-        # Проверка на последнюю страницу, если вакансий меньше 10000
-        if (jsObj['pages'] - page) <= 1:
-            break
-
-        for v in jsObj['items']:
-            if (v['url'] not in all_v): 
+def getVacnciesByType( l_countries, schedule = 'remote' ):
+    step = 0
+    new_vacancy_count=0
+    # проходимся по всем типам вакансий
+    for country in l_countries:
+        # проходимся по всем страницам поиска
+        for page in range(0, 10):
+            # Преобразуем текст ответа запроса в справочник Python
+            jsObj = json.loads(getPage(schedule, country, page))
             
-                # Обращаемся к API и получаем детальную информацию по конкретной вакансии
-                all_v.append(v['url'])
-                req = requests.get(v['url'])
-                data = req.content.decode()
-                req.close()
+            # print( 'Items: ', jsObj['items'] )
+            # print( 'Pages: ', jsObj['pages'] )
+
+            for v in jsObj['items']:
+                if (v['url'] not in all_v): 
                 
-                jsonObj = json.loads(data)
-
-                remote_words_there=1 if any(word in jsonObj['description'].lower() for word in remote_words) else 0
-
-                if remote_words_there:
-                    if not any(word in jsonObj['name'].lower() for word in exclude_words_IN_NAME):
-
-                        stri = jsonObj['description']
-                        # stri = stri.replace('<strong>','\033[1m')
-                        # stri = stri.replace('</strong>','\033[0m')
-                        stri = stri.replace('</li> <li>','\\n')
-                        stri = stri.replace('<ul> <li>','\\n')
-                        stri = stri.replace('</li>','\\n')
-                        stri = stri.replace('</ul>','')
-
-                        with conn.cursor() as cursor:
-                            cursor.execute("""INSERT INTO vacancies (url,name,experience,alternate_url,description,schedule,location,added) 
-                                    VALUES (%s, %s, %s, %s, %s, %s, current_timestamp); 
-                                    """, 
-                                    (jsonObj['name'], 
-                                    jsonObj['experience']['id']),
-                                    jsonObj['alternate_url'],   
-                                    stri,                          
-                                    jsonObj['schedule']['id'],
-                                    jsonObj['area']['name'])
+                    # Обращаемся к API и получаем детальную информацию по конкретной вакансии
+                    all_v.append(v['url'])
+                    req = requests.get(v['url'])
+                    data = req.content.decode()
+                    req.close()
                     
-                new_vacancy_count += 1
-                time.sleep(0.25)
-            else:
-                pass
-        
-        
-        # Необязательная задержка, но чтобы не нагружать сервисы hh, оставим
-        time.sleep(0.25)
+                    jsonObj = json.loads(data)
 
-    step+=1
+                    # remote_words_there=1 #if any(word in jsonObj['description'].lower() for word in remote_words) else 0
 
-print('\n\n Всего '+str(new_vacancy_count)+' новых вакансий')
+                    # if remote_words_there:
+                    #     if not any(word in jsonObj['name'].lower() for word in exclude_words_IN_NAME):
+
+                    stri = jsonObj['description']
+                    # stri = stri.replace('<strong>','\033[1m')
+                    # stri = stri.replace('</strong>','\033[0m')
+                    stri = stri.replace('</li> <li>','\\n')
+                    stri = stri.replace('<ul> <li>','\\n')
+                    stri = stri.replace('</li>','\\n')
+                    stri = stri.replace('</ul>','')
+
+
+                    # (user_id,query_id,url,name,experience,alternate_url,description,schedule,location)
+                    # print('Vac name: ', jsonObj['name'])
+                    # print('Exp: ', jsonObj['experience']['id'])
+                    # print('url: ', jsonObj['alternate_url'])
+                    # print('Desc: ', stri)     
+                    # print('Sched: ', jsonObj['schedule']['id'])
+                    # print('Location: ', jsonObj['area']['name'])
+
+                    vacancy_data = (
+                        user_id,
+                        user_query,
+                        v['url'],
+                        jsonObj['name'], 
+                        jsonObj['experience']['id'],
+                        jsonObj['alternate_url'],   
+                        stri,                          
+                        jsonObj['schedule']['id'],
+                        jsonObj['area']['name']
+                    )
+
+                    # print('Ready insert data: ', vacancy_data)
+
+                    with conn.cursor() as cursor:
+                        cursor.execute(insert_query, vacancy_data)
+                        time.sleep(0.25)
+                        conn.commit()
+                        cursor.close()
+                        
+                    new_vacancy_count += 1
+                    time.sleep(0.25)
+                    
+                else:
+                    pass
+
+            # Необязательная задержка, но чтобы не нагружать сервисы hh, оставим
+            time.sleep(0.25)
+
+            # Проверка на последнюю страницу, если вакансий меньше 10000
+            if (jsObj['pages'] - page) <= 1:
+                break            
+                        
+    print('\n\n Всего '+str(new_vacancy_count)+' новых вакансий по запросу ' + schedule)
+
+getVacnciesByType(countries,'remote')
+
+getVacnciesByType(schedule,'fullDay')
 
 conn.close()
