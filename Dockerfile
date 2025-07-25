@@ -1,7 +1,7 @@
 # Use a lightweight Python base image
 FROM python:3.11-alpine
 
-RUN apk add --update --no-cache postgresql-client postgresql-dev
+RUN apk add --update --no-cache libpq
 
 # Set working directory
 WORKDIR /app
