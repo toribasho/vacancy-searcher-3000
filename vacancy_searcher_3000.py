@@ -132,9 +132,9 @@ def getVacnciesByType( l_countries, schedule = 'remote' ):
                         stri = jsonObj['description']
                         # stri = stri.replace('<strong>','\033[1m')
                         # stri = stri.replace('</strong>','\033[0m')
-                        stri = stri.replace('</li> <li>','\\n')
-                        stri = stri.replace('<ul> <li>','\\n')
-                        stri = stri.replace('</li>','\\n')
+                        stri = stri.replace('</li> <li>','\n')
+                        stri = stri.replace('<ul> <li>','\n')
+                        stri = stri.replace('</li>','\n')
                         stri = stri.replace('</ul>','')
 
 
