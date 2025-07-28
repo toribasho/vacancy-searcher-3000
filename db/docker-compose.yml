@@ -1,8 +1,8 @@
 version: '3' # Specifies the Docker Compose file format version
 services:
-  db: # Defines a service named 'db' for the PostgreSQL database
+  postgres_db: # Defines a service named 'db' for the PostgreSQL database
     image: postgres:16.3-alpine3.20 # Specifies the PostgreSQL image to use (e.g., version 16.3, alpine variant for smaller size)
-    container_name: db # Assigns a custom name to the container
+    container_name: postgres_db # Assigns a custom name to the container
     env_file: .env
     environment:
       POSTGRES_USER: $V_PG_DB_USER # Sets the PostgreSQL superuser username
@@ -19,7 +19,7 @@ services:
     image: toribash/vac-search-3001:noti
     env_file: .env
     depends_on:
-      - db
+      - postgres_db
     environment:
       - TELEGRAM_BOT_TOKEN=$V_TELEGRAM_BOT_TOKEN
       - PG_DB_NAME=$V_PG_DB_NAME
@@ -33,7 +33,7 @@ services:
     image: toribash/vac-search-3001:main
     env_file: .env
     depends_on:
-      - db
+      - postgres_db
     environment:
       - USER_ID=$V_USER_ID
       - QUERY_ID=$V_QUERY_ID
@@ -41,4 +41,4 @@ services:
       - DB_USER=$V_PG_DB_USER
       - DB_PASS=$V_PG_DB_PASSWORD
       - DB_HOST=$V_PG_DB_HOST
-    restart: always
+    restart: no
