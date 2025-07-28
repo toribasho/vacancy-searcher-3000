@@ -14,3 +14,6 @@ CREATE TABLE public.querries (
 	exclude_by_words text NULL,
 	expirience varchar(255) NULL
 );
+
+ALTER TABLE public.vacancies ADD usr_id int NOT NULL;
+ALTER TABLE public.vacancies ADD query_id int NOT NULL;
