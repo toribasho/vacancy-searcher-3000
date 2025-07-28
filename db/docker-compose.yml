@@ -1,8 +1,8 @@
-version: '3.8' # Specifies the Docker Compose file format version
+version: '3' # Specifies the Docker Compose file format version
 services:
   db: # Defines a service named 'db' for the PostgreSQL database
     image: postgres:16.3-alpine3.20 # Specifies the PostgreSQL image to use (e.g., version 16.3, alpine variant for smaller size)
-    container_name: postgres_db # Assigns a custom name to the container
+    container_name: db # Assigns a custom name to the container
     env_file: .env
     environment:
       POSTGRES_USER: $V_PG_DB_USER # Sets the PostgreSQL superuser username
@@ -18,7 +18,7 @@ services:
     container_name: tg-vac3000-notifier
     image: toribash/vac-search-3001:noti
     env_file: .env
-    depened_on:
+    depends_on:
       - db
     environment:
       - TELEGRAM_BOT_TOKEN=$V_TELEGRAM_BOT_TOKEN
@@ -32,7 +32,7 @@ services:
     container_name: vac3001-main
     image: toribash/vac-search-3001:main
     env_file: .env
-    depened_on:
+    depends_on:
       - db
     environment:
       - USER_ID=$V_USER_ID
