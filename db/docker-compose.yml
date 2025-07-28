@@ -1,0 +1,44 @@
+version: '3.8' # Specifies the Docker Compose file format version
+services:
+  db: # Defines a service named 'db' for the PostgreSQL database
+    image: postgres:16.3-alpine3.20 # Specifies the PostgreSQL image to use (e.g., version 16.3, alpine variant for smaller size)
+    container_name: postgres_db # Assigns a custom name to the container
+    env_file: .env
+    environment:
+      POSTGRES_USER: $V_PG_DB_USER # Sets the PostgreSQL superuser username
+      POSTGRES_PASSWORD: $V_PG_DB_PASSWORD # Sets the PostgreSQL superuser password
+      POSTGRES_DB: $V_PG_DB_NAME # Sets the default database to be created
+    volumes:
+      - ./data:/var/lib/postgresql/data # Mounts a local directory for data persistence
+    ports:
+      - "127.0.0.1:5432:5432" # Maps port 5432 from the container to port 5432 on the host
+    restart: always # Ensures the container restarts automatically if it stops
+
+  tg-vac3001-notifier:
+    container_name: tg-vac3000-notifier
+    image: toribash/vac-search-3001:noti
+    env_file: .env
+    depened_on:
+      - db
+    environment:
+      - TELEGRAM_BOT_TOKEN=$V_TELEGRAM_BOT_TOKEN
+      - PG_DB_NAME=$V_PG_DB_NAME
+      - PG_DB_USER=$V_PG_DB_USER
+      - PG_DB_PASSWORD=$V_PG_DB_PASSWORD
+      - PG_DB_HOST=$V_PG_DB_HOST
+    restart: always
+
+  vac3001:
+    container_name: vac3001-main
+    image: toribash/vac-search-3001:main
+    env_file: .env
+    depened_on:
+      - db
+    environment:
+      - USER_ID=$V_USER_ID
+      - QUERY_ID=$V_QUERY_ID
+      - DB_NAME=$V_PG_DB_NAME
+      - DB_USER=$V_PG_DB_USER
+      - DB_PASS=$V_PG_DB_PASSWORD
+      - DB_HOST=$V_PG_DB_HOST
+    restart: always
