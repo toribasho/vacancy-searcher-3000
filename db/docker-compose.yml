@@ -41,4 +41,3 @@ services:
       - DB_USER=$V_PG_DB_USER
       - DB_PASS=$V_PG_DB_PASSWORD
       - DB_HOST=$V_PG_DB_HOST
-    restart: no
