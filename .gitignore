@@ -2,3 +2,4 @@ vacancy-searcher-3000.code-workspace
 db/.env
 db/test/.env
 db/test/docker-compose.yml
+db/queries.sql
