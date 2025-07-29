@@ -1,18 +1,18 @@
-version: '3' # Specifies the Docker Compose file format version
+version: '3'
 services:
-  postgres_db: # Defines a service named 'db' for the PostgreSQL database
-    image: postgres:16.3-alpine3.20 # Specifies the PostgreSQL image to use (e.g., version 16.3, alpine variant for smaller size)
-    container_name: postgres_db # Assigns a custom name to the container
+  postgres_db:
+    image: postgres:16.3-alpine3.20
+    container_name: postgres_db
     env_file: .env
     environment:
-      POSTGRES_USER: $V_PG_DB_USER # Sets the PostgreSQL superuser username
-      POSTGRES_PASSWORD: $V_PG_DB_PASSWORD # Sets the PostgreSQL superuser password
-      POSTGRES_DB: $V_PG_DB_NAME # Sets the default database to be created
+      POSTGRES_USER: $V_PG_DB_USER
+      POSTGRES_PASSWORD: $V_PG_DB_PASSWORD
+      POSTGRES_DB: $V_PG_DB_NAME
     volumes:
-      - ./data:/var/lib/postgresql/data # Mounts a local directory for data persistence
+      - ./data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432" # Maps port 5432 from the container to port 5432 on the host
-    restart: always # Ensures the container restarts automatically if it stops
+      - "127.0.0.1:5432:5432"
+    restart: always
 
   tg-vac3001-notifier:
     container_name: tg-vac3000-notifier
